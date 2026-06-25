@@ -1,133 +1,147 @@
-# Meta-DR: Meta-Learning for Dimensionality Reduction Recommendation
+# Processamento Analítico em Larga Escala para Extração Distribuída de Metafeatures
 
-A meta-learning framework for the automated selection of dimensionality reduction (DR) techniques in high-dimensional data scenarios.
+Este repositório contém a implementação desenvolvida para a disciplina de Ciência de Dados, cujo objetivo é investigar o uso do **Apache Spark** na construção de meta-bases para sistemas de **Meta-Aprendizagem** voltados à recomendação de técnicas de **Redução de Dimensionalidade (RD)**.
 
----
-
-## Introduction
-
-High-dimensional data often degrades the performance of machine learning algorithms due to sparsity, noise, distance concentration, and overfitting. **Dimensionality reduction** simplifies data and can improve efficiency and generalization, but choosing the best DR technique for each dataset is difficult and costly. **Meta-learning (MtL)** addresses this by learning from past experience: it uses dataset characteristics (meta-features) and historical performance of DR algorithms to recommend suitable techniques for new datasets without exhaustive evaluation. This repository implements **Meta-DR**, a framework that learns the mapping between dataset properties and DR performance rankings and recommends techniques for unseen data.
+A proposta explora processamento distribuído, paralelismo e particionamento de dados para reduzir o custo computacional da extração de metafeatures em cenários envolvendo grandes volumes de dados.
 
 ---
 
-## Objective and Motivation
+## Objetivo
 
-The **Algorithm Selection Problem**—choosing the best algorithm for a given dataset—is a central bottleneck in ML. For dimensionality reduction, the effectiveness of each technique depends on the data; no single method is best for all cases. Manually testing many DR methods is time-consuming and computationally expensive.
+Desenvolver uma pipeline de processamento analítico em larga escala capaz de:
 
-**Meta-DR** aims to:
-- **Automate** the selection of DR techniques using meta-learning.
-- **Reduce** the need for repeated evaluation of all candidates on each new dataset.
-- **Learn** from prior experiments: dataset meta-features and performance rankings are used to train a meta-model that predicts a ranking of DR techniques for new datasets.
-
-The main idea is that datasets with similar meta-feature profiles tend to benefit from similar DR techniques; the meta-learner exploits this to generalize and recommend effectively.
-
----
-
-## Methodology
-
-The framework has two phases:
-
-1. **Construction (offline):** For a set of datasets, extract meta-features, apply each DR technique, evaluate classification performance (e.g. F1 with KNN), and build a meta-dataset of (meta-features, DR performance rankings). A meta-learner (e.g. Random Forest) is trained to predict rankings from meta-features.
-2. **Recommendation (online):** For a new dataset, extract the same meta-features and use the trained meta-model to predict a ranking of DR techniques—without running all DR algorithms.
-
-The figure below summarizes the workflow.
-
-![Meta-DR operational workflow](images/proposedFramework.png)
-
-*Figure 1: Operational workflow of Meta-DR (construction and recommendation phases).*
+- Realizar a ingestão de conjuntos de dados provenientes do OpenML;
+- Executar a extração distribuída de metafeatures utilizando Apache Spark;
+- Construir uma meta-base para sistemas de meta-aprendizagem;
+- Avaliar técnicas de redução de dimensionalidade;
+- Treinar um meta-modelo para recomendação automática de técnicas de RD.
 
 ---
 
-## Results
+## Arquitetura
 
-Experiments used **68 high-dimensional datasets** (OpenML), **10 DR techniques** (PCA, Kernel PCA, LDA, t-SNE, LLE, Truncated SVD, Incremental PCA, Random Trees Embedding, SelectKBest, Spectral Embedding), and meta-features from **General**, **Statistical**, and **Information-theoretic** categories.
+A pipeline proposta é composta pelas seguintes etapas:
 
-### Dataset and meta-feature analysis
-
-![Dataset summary](images/dataset_summary.png)
-
-*Figure 2: Summary statistics of the 68 datasets (instances, features, classes).*
-
-![Meta-feature correlation](images/correlation_heatmap.png)
-
-*Figure 3: Correlation among meta-features (original set).*
-
-![Meta-feature correlation reduced](images/correlation_heatmap_reduced.png)
-
-*Figure 4: Correlation after removing highly correlated meta-features.*
-
-![Feature importance](images/feature_importance.png)
-
-*Figure 5: Meta-feature importance from the Random Forest meta-learner.*
-
-### Ranking prediction (Spearman correlation)
-
-The meta-model was evaluated with **Spearman rank correlation (SRC)** between predicted and observed DR rankings. Meta-DR outperformed non-learning baselines (mean and median ranking predictors).
-
-![Mean SRC](images/src_distributionbarIC.png)
-
-*Figure 6: Mean Spearman rank correlation for Meta-DR variants and baselines.*
-
-![SRC distribution](images/src_distributionboxplot.png)
-
-*Figure 7: Distribution of SRC across datasets.*
-
-### Classification performance
-
-Using the **top-ranked** DR technique recommended by Meta-DR per dataset led to higher average classification performance than fixed DR choices and baselines. Recommending a **small subset** (e.g. best of 2 or 3) further improved robustness.
-
-![Average performance](images/Average-PerformanceBarIC_3_short.png)
-
-*Figure 8: Average F1-score of Meta-DR variants, individual DR techniques, and baselines.*
-
-![Performance box plots](images/Average-Performancebox.png)
-
-*Figure 9: Distribution of classification performance (box plots).*
-
-### Critical difference diagram
-
-![CD diagram](images/cd_diagram.png)
-
-*Figure 10: Critical difference diagram. Methods connected by a horizontal line are not statistically different (Nemenyi test). Meta-DR variants appear among the top-ranked approaches.*
+1. Ingestão dos datasets (OpenML)
+2. Filtragem dos conjuntos de dados
+3. Conversão para formato Parquet
+4. Particionamento utilizando Apache Spark
+5. Extração distribuída de metafeatures
+6. Avaliação das técnicas de Redução de Dimensionalidade
+7. Construção da meta-base
+8. Treinamento do meta-modelo
+9. Recomendação de técnicas de RD
 
 ---
 
-## Conclusion
+## Tecnologias Utilizadas
 
-Meta-DR shows that **meta-learning is an effective and viable strategy** for recommending dimensionality reduction techniques. The framework:
-
-- **Outperforms** simple baselines in terms of rank correlation (predicted vs. observed rankings) and base-level classification performance.
-- **Shifts cost** to an offline construction phase; recommendation for new datasets is a low-cost inference step.
-- **Benefits** from dataset characterization via meta-features, with statistical and information-theoretic meta-features being particularly informative.
-
-Results support the use of data-driven, meta-learning-based selection of DR techniques in high-dimensional and big data scenarios, reducing the need for manual trial-and-error while achieving competitive performance. Future work may include multiple base classifiers, more DR methods (e.g. deep learning-based), and integration into full AutoML pipelines.
+- Apache Spark
+- Python
+- PySpark
+- OpenML
+- PyMFE
+- Scikit-Learn
+- Pandas
+- NumPy
 
 ---
 
-## Repository structure and usage
+## Metafeatures
 
-- **`Meta_DR.ipynb`**: Main notebook with the full pipeline (meta-feature extraction, DR evaluation, meta-dataset construction, meta-learner training, and evaluation).
-- **`data/`**: Processed data (baseline classification, DR results, meta-features, predictions).
-- **`images/`**: Figures used in the paper and in this README.
+A extração foi realizada utilizando a biblioteca **PyMFE**, considerando os seguintes grupos de metafeatures:
 
-### Running on your PC
+- Landmarking
+- General
+- Statistical
+- Model-based
+- Information Theory
+- Relative
+- Clustering
+- Complexity
+- Itemset
+- Concept
 
-1. **Clone the repo** and open the project folder (e.g. `meta-dr/`).
-2. **Optional but recommended:** create a virtual environment so dependencies stay isolated:
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate   # Linux/macOS
-   # or:  .venv\Scripts\activate   # Windows
-   ```
-   On **Debian/Ubuntu**, if you get *ensurepip is not available*, install the venv package first:
-   ```bash
-   sudo apt install python3.12-venv   # or python3-venv
-   ```
-   then run `python -m venv .venv` again.
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. **Open and run the notebook** from the **project root** (so paths like `data/...` work). Use Jupyter, VS Code, or any environment that runs `.ipynb` files.
+Também foram utilizados operadores de sumarização estatística:
 
-The first cell installs `openml`, `pymfe`, and `mlxtend` if you are on Google Colab; when running locally, those packages are provided by `requirements.txt`. The notebook detects local runs and skips Google Drive mount, so no `.venv` or Colab is required—but using a `.venv` is recommended to avoid conflicts with other Python projects.
+- Mean
+- Median
+- Minimum
+- Maximum
+- Standard Deviation
+- Quantiles
+- Histogram
+
+---
+
+## Técnicas de Redução de Dimensionalidade
+
+Foram avaliadas as seguintes técnicas:
+
+- PCA
+- Incremental PCA
+- Random Trees Embedding
+- SelectKBest
+- Spectral Embedding
+- Truncated SVD
+- Linear Discriminant Analysis (LDA)
+- Locally Linear Embedding (LLE)
+- Kernel PCA
+- t-SNE
+
+---
+
+## Meta-Aprendizagem
+
+O sistema utiliza um **Random Forest Regressor** como meta-modelo para aprender a relação entre as metafeatures dos conjuntos de dados e o desempenho das técnicas de redução de dimensionalidade.
+
+A avaliação foi realizada utilizando:
+
+- Leave-One-Out Cross Validation (LOOCV)
+- Spearman Rank Correlation (SRC)
+
+Os resultados foram comparados com os seguintes métodos de referência:
+
+- Mean Ranking
+- Median Ranking
+
+---
+
+## Estrutura do Projeto
+
+```text
+.
+├── data/
+│   ├── raw/
+│   ├── parquet/
+│   ├── metafeatures/
+│   └── rankings/
+│
+├── notebooks/
+│
+├── src/
+│
+├── figures/
+│
+├── report/
+│
+└── README.md
+```
+
+---
+
+## Resultados
+
+A utilização do Apache Spark permitiu distribuir a etapa de extração de metafeatures entre múltiplas partições, reduzindo o custo computacional da construção da meta-base e tornando a solução escalável para cenários envolvendo centenas de conjuntos de dados.
+
+O meta-modelo apresentou desempenho superior aos métodos de referência (Mean Ranking e Median Ranking), demonstrando a capacidade de aprender relações entre as metafeatures e o desempenho das técnicas de redução de dimensionalidade.
+
+---
+
+## Autor
+
+**Daniel José da Silva**
+
+Mestrando em Informática
+
+Universidade Federal de Alagoas (UFAL)
